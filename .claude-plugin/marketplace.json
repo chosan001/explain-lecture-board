@@ -1,0 +1,14 @@
+{
+  "name": "lecture-board",
+  "description": "Study tools for math lectures taught in English.",
+  "owner": {
+    "name": "explain-lecture-board contributors"
+  },
+  "plugins": [
+    {
+      "name": "explain-lecture-board",
+      "source": "./",
+      "description": "Explain a professor's math blackboard PDF as Typst-compiled PDF notes."
+    }
+  ]
+}

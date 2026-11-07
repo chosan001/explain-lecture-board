@@ -1,0 +1,14 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Working files created while generating notes
+board/
+parts/
+figures/
+*.typ
+!skills/**/*.typ
+
+# Your own lecture PDFs and course folders. Keep them out of a public repo.
+/courses/
+/private/
