@@ -1,11 +1,18 @@
 {
   "name": "explain-lecture-board",
   "displayName": "Explain Lecture Board",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Turns a PDF of a professor's math blackboard photos into Typst-compiled PDF notes: overview, original photo, faithful transcription, and a step-by-step explanation in English with Chinese notes on the hard parts.",
   "author": {
     "name": "explain-lecture-board contributors"
   },
   "license": "MIT",
-  "keywords": ["math", "lecture notes", "blackboard", "typst", "study", "chinese"]
+  "keywords": [
+    "math",
+    "lecture notes",
+    "blackboard",
+    "typst",
+    "study",
+    "chinese"
+  ]
 }

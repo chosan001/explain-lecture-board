@@ -15,10 +15,12 @@ See [`examples/sample-notes.pdf`](examples/sample-notes.pdf), generated from [`e
 One PDF per lecture, containing:
 
 1. **Overview:** what the lecture covers and how the argument unfolds.
-2. For each block of content (a definition, a theorem and its proof, an example):
-   - **The original photo**, so you can always check against the board.
-   - **A transcription** of exactly what is on the board, nothing added or corrected.
+2. The lecture explained **block by block**. A block is one logical unit: a definition, a theorem with its whole proof, an example, a derivation. Blocks follow the logic of the lecture, not the photo pages: a proof that runs over three pages is one block, and a page holding the end of one proof and the start of a new definition is split between two blocks. Each block contains:
+   - **The board photos it uses**, cropped to the relevant part of each page, so you can always check against the board.
+   - **A transcription** of exactly what is on the board, nothing added or corrected, with markers where it moves to the next photo page.
    - **An explanation** in the order the professor wrote it, in the professor's notation.
+
+   A long proof is split into its steps, and each step shows its own photo, transcription, and explanation, so you never have to flip back and forth.
 
 How the explanation works:
 
@@ -48,7 +50,7 @@ Everything outside the transcription is written by the assistant, not the profes
 The assistant sets these up as needed and asks before installing anything on your computer.
 
 - **Typst** 0.15 or later, to compile the notes.
-- **Python 3**, plus either `pdftoppm` (from Poppler) or the Python packages `pypdfium2` and `pillow`, to turn the PDF into page images.
+- **Python 3**, plus either `pdftoppm` (from Poppler) or the Python packages `pypdfium2` and `pillow`, to turn the PDF into page images. Cropping the photos needs `pillow`; without it, whole pages are shown.
 - **A Chinese font**, such as Noto Serif CJK SC, for the Chinese notes. macOS and Windows already include one. Not needed in English-only mode.
 
 ### Installation
@@ -115,7 +117,7 @@ By default, the notes add Chinese names to technical terms and a short Chinese p
    - Keep the transcription exactly as it is on the board.
    ```
 
-3. In the section headed `## 校对` (Checks), item 5 ends with the sentence `术语只在首次出现时带中文。`, which means "terms carry Chinese only at their first appearance". Delete that sentence so the checklist does not ask for Chinese.
+3. In the section headed `## 校对` (Checks), the last item ends with the sentence `术语只在首次出现时带中文。`, which means "terms carry Chinese only at their first appearance". Delete that sentence so the checklist does not ask for Chinese.
 4. Optional: the first paragraph under `# 板书讲解` describes the reader as a Chinese international student. Rewrite it to describe yourself. The assistant uses it to judge how much to explain.
 
 Where the file is depends on how you installed the skill:
@@ -157,10 +159,12 @@ Lecture materials may be covered by your university's copyright or course rules.
 每节课一份 PDF，内容如下：
 
 1. **概要：** 这节课讲了什么，论证如何展开。
-2. 每一块内容（一个定义、一个定理及其证明、一个例子）依次是：
-   - **原图：** 随时可以对照板书。
-   - **板书转录：** 只有板书上的内容，不增补，不修正。
+2. **一块一块**地讲。一块是一个逻辑单元：一个定义、一个定理连同它的完整证明、一个例子、一段推导。块按讲课的逻辑划分，不按照片分页：跨三页的证明是一块；一页上半是上个证明的结尾、下半是新定义，就分属两块。每块依次是：
+   - **原图：** 这块用到的板书，裁剪到每页的相关部分，随时可以对照。
+   - **板书转录：** 只有板书上的内容，不增补，不修正；换到下一张照片的地方有标记。
    - **讲解：** 按教授的书写顺序，用教授的符号。
+
+   长证明按步骤拆开，每一步有自己的原图、转录和讲解，不用来回翻。
 
 讲解的方式：
 
@@ -190,7 +194,7 @@ Lecture materials may be covered by your university's copyright or course rules.
 需要的工具由 AI 按需配置；在你的电脑上安装任何东西之前，它都会先问你。
 
 - **Typst** 0.15 或更高版本，用来编译笔记。
-- **Python 3**，以及 `pdftoppm`（Poppler 自带）或 Python 包 `pypdfium2` 和 `pillow` 二选一，用来把 PDF 转成图片。
+- **Python 3**，以及 `pdftoppm`（Poppler 自带）或 Python 包 `pypdfium2` 和 `pillow` 二选一，用来把 PDF 转成图片。裁剪照片需要 `pillow`，没有时显示整页。
 - **中文字体**，如 Noto Serif CJK SC。macOS 和 Windows 自带中文字体。
 
 ### 安装

@@ -11,7 +11,7 @@ description: 把教授的数学板书 PDF 讲透并生成 Typst PDF 笔记（概
 
 ## 流程
 
-建议建一个任务列表：配置、渲染、通读、逐块撰写、校对。
+建议建一个任务列表：配置、渲染、通读并切块、逐块撰写、校对。
 
 ### 1. 加载课程配置
 
@@ -68,21 +68,56 @@ else:  # pip install pypdfium2 pillow
 print(f"{count} pages")
 ```
 
-### 3. 通读全部板书，再动笔
+### 3. 通读全部板书，切分逻辑块
 
 按页序从第 1 页起，用 Read 逐页查看 `board/p-NNN.jpg`，每一页都要看。符号看不清时，把该区域裁剪放大再看，不要凭印象。
 
-动笔前先弄清楚：
+先弄清这节课的主线，再把内容切成**逻辑块**。讲解的单位是逻辑块，不是页。照片在哪里分页，取决于教授什么时候擦黑板、学生什么时候拍照，和数学结构无关：一个证明常常跨两三页，一页上也常常有两三件互不相干的事。如果按页讲，读者就得在几页之间来回翻，自己把同一个论证拼起来，而这正是读者最需要帮助的地方。
 
-- 这节课的主线是什么，每页对应主线的哪一段。
-- **逻辑顺序。** 教授常常不按顺序写，比如在角落补引理、回头改式子、证明跨页。按逻辑重建顺序，凡是调整过的地方都标出来。
-- 把内容分成若干“块”，一块是一个定义、定理及其证明，或一个例子。
+一个逻辑块是可以一口气读完的完整单元，例如：
 
-### 4. 分块撰写
+- 一个定义，连同紧跟着它的说明和小例子；
+- 一个定理（或引理、命题），连同它的完整证明，不管证明写了几页；
+- 一个独立的例子或计算；
+- 一段完整的推导，比如从方程推出某个公式。
 
-不要把全部内容一次写进一个文件。每块写一个文件（`parts/01.typ`、`parts/02.typ` ……），写完一块就编译一次，及早发现语法错误。
+切分规则：
 
-后面的页和前面的页同样详细，这是最容易出问题的地方：上下文变长后，人总想越写越简略。如果一次做不完，就接着做，不要压缩。
+- **逻辑上连着的放在一起。** 证明写到页底，下一页接着写，就是同一块。定理的陈述在一页、证明在下一页，也是同一块。
+- **同一页上不相关的内容分开。** 一页的上半是上一个证明的结尾，下半是新定义，就分属两块。
+- **补写的内容归位。** 教授写在别处的内容（角落里的引理、回头补的条件、后面才写的更正），并入它所属的块，并用 `Order changed` 说明它原来在哪一页。
+- **引理看分量。** 证明里用到的引理，如果有自己的证明，就单独成块，放在用到它的定理之前；如果只是一句话的事实，就并入。
+- **大小适中。** 一行说明不单独成块。很长的证明（比如超过两页）仍是一块，在块内按证明步骤分段（见“块的结构”）。
+
+动笔前先写块计划，存为 `plan.md`，每块一行：标题，用到的板书区域（如 `p2 下半, p3 上半`），在逻辑顺序中的位置。之后按这个计划写，并用它做覆盖检查。
+
+**裁剪板书区域。** 一块只用到一页的一部分时，把这部分裁剪出来，这样每块只显示它自己的内容，同一页的不同部分可以出现在不同的块里。把下面的脚本存为 `crop_board.py`（需要 pillow）：
+
+```python
+# 用法：python3 crop_board.py <页码> <名称> <上> <下> [<左> <右>]
+# 上下左右是 0 到 1 之间的比例，比如 0.5 1 表示下半页。四周自动留出 3% 的余量。
+import pathlib, sys
+from PIL import Image
+
+n, name = int(sys.argv[1]), sys.argv[2]
+top, bottom = float(sys.argv[3]), float(sys.argv[4])
+left, right = (float(sys.argv[5]), float(sys.argv[6])) if len(sys.argv) > 6 else (0.0, 1.0)
+pad = 0.03
+im = Image.open(f"board/p-{n:03d}.jpg")
+w, h = im.size
+box = (max(0, left - pad) * w, max(0, top - pad) * h,
+       min(1, right + pad) * w, min(1, bottom + pad) * h)
+pathlib.Path("board/crops").mkdir(exist_ok=True)
+im.crop(tuple(round(v) for v in box)).save(f"board/crops/{name}.jpg", quality=85)
+```
+
+例如 `python3 crop_board.py 2 p2-lower 0.45 1`。裁剪后用 Read 查看裁出的图，确认边缘没有切掉字，切到了就把范围放宽。区域分界不清楚，或者没有 pillow 时，就用整页。
+
+### 4. 逐块撰写
+
+不要把全部内容一次写进一个文件。按块计划，每块写一个文件（`parts/01.typ`、`parts/02.typ` ……），写完一块就编译一次，及早发现语法错误。
+
+后面的块和前面的块同样详细，这是最容易出问题的地方：上下文变长后，人总想越写越简略。如果一次做不完，就接着做，不要压缩。
 
 ### 5. 校对（见“校对”一节），然后交付
 
@@ -95,9 +130,18 @@ print(f"{count} pages")
 只有这些内容：
 
 1. **概要**：这节课讲了什么，主线如何展开（一小段或几句话）。
-2. 对每一块，依次是：**原图 → 板书转录 → 讲解**，需要时加图。
+2. 按逻辑顺序，**一块一块**地讲。每块依次是：**原图 → 板书转录 → 讲解**，需要时加图。讲完一块再讲下一块。
 
 不要加这些：动机与历史、条件必要性分析和反例、与应用或代码的联系、练习题、闪卡、考点预测、术语表、总结清单。
+
+### 块的结构
+
+- **标题**：说明这块是什么，如 `Theorem: Banach fixed point`，不写页码。
+- **原图**：这块用到的所有板书区域，按逻辑顺序排列。整页都属于这块就放整页 `#board(3)`，只用到一部分就放裁剪图 `#board(3, crop: "p3-upper", where: "upper half")`。同一张照片的不同部分可以出现在不同的块里。
+- **转录**：不分步的块只有一个转录（分步的块每步一个，见下面的“长块分步”），按逻辑顺序拼接。转录里换页的地方加 `#pagemark(n)`，读者就知道接下来的内容在哪张照片上。
+- **讲解**：先用一两句话说清这块要做什么、策略是什么，再按块内的逻辑顺序逐行讲解。讲解只讲这一块，不提前讲后面块的内容。前面的块已经讲过的结论，直接引用（如 “by the bound proved in the previous block”），不再重讲。
+
+**长块分步。** 如果一块的转录超过大约一页（常见于长证明），就在块内按证明的步骤分段。每一步有一个简短的步骤说明（如 `#step[Step 2: the iterates are Cauchy.]`），后面依次是这一步的原图、转录和讲解。这样读者不用在长转录和后面的讲解之间来回翻。步骤按证明本身的结构来分，不按页分。块开头的策略说明仍然要写，并预告有哪几步。
 
 ## 怎么讲
 
@@ -143,12 +187,26 @@ print(f"{count} pages")
 `lib.typ`：
 
 ```typst
-// 原图。n 是 PDF 页码。自动限制高度，竖拍的照片也不会占满整页。
-#let board(n) = block(width: 100%, breakable: false, above: 1em, below: 0.6em)[
-  #align(center, image("board/p-" + "000".slice(str(n).len()) + str(n) + ".jpg", width: 100%, height: 11cm, fit: "contain"))
-  #v(-0.3em)
-  #align(center, text(size: 8.5pt, fill: luma(100))[Board, page #n])
-]
+// 原图。n 是 PDF 页码。crop 是 crop_board.py 生成的裁剪图名称，where 说明它是这一页的哪部分。
+// 图片按页宽显示，高度超过 11cm 时缩小，竖拍的照片也不会占满整页；扁长的裁剪图不会留下空白。
+#let board(n, crop: none, where: none) = {
+  let file = if crop == none { "/board/p-" + "000".slice(str(n).len()) + str(n) + ".jpg" } else { "/board/crops/" + crop + ".jpg" }
+  block(width: 100%, breakable: false, above: 1em, below: 0.6em)[
+    #layout(size => {
+      let full = image(file, width: size.width)
+      let img = if measure(full, width: size.width).height > 11cm { image(file, height: 11cm) } else { full }
+      align(center, img)
+    })
+    #v(-0.3em)
+    #align(center, text(size: 8.5pt, fill: luma(100))[Board, page #n#if where != none [, #where]])
+  ]
+}
+
+// 长块里的步骤说明。sticky 让它和下面的原图留在同一页，不会单独落在页底。
+#let step(body) = block(sticky: true, above: 1.5em, below: 0.4em, text(weight: "bold", body))
+
+// 转录中的换页标记：从这里开始的内容在第 n 页的照片上。
+#let pagemark(n) = block(above: 0.7em, below: 0.5em, text(size: 8pt, fill: luma(110), tracking: 0.04em)[(board page #n)])
 
 // 板书转录：只放板书上的内容。
 #let transcript(body) = block(width: 100%, breakable: true, stroke: (left: 1.2pt + luma(150)), inset: (left: 10pt, y: 3pt), above: 0.8em, below: 1.1em, body)
@@ -193,19 +251,21 @@ print(f"{count} pages")
 // #include "parts/01.typ"
 ```
 
-每个块文件的写法：
+每个块文件的写法。这个例子里，定理写在第 3 页下半，证明接着写满第 4 页：
 
 ```typst
 #import "/lib.typ": *
 
-= Contraction mapping theorem
+= Theorem: contraction mapping
 
-#board(3)
+#board(3, crop: "p3-lower", where: "lower half")
+#board(4)
 
 #transcript[
   *Thm.* Let $(X, d)$ be complete, $T: X -> X$ with $d(T x, T y) <= q d(x, y)$, $q < 1$. \
   Then $T$ has a unique f.p.
 
+  #pagemark(4)
   $ d(x_n, x_m) <= q^n / #suspect[$1 + q$] d(x_0, x_1) $
 ]
 
@@ -216,7 +276,21 @@ The strategy has three steps ...
 #zh[这里的关键是……]
 ```
 
-图用 matplotlib 生成 PNG（`dpi=200`），存到 `figures/`，用 `#image("figures/x.png", width: 70%)` 插入（如果在 `parts/` 里，路径写 `/figures/x.png`）。不要依赖 Typst 包（CeTZ 等）：有些环境连不上包仓库。只有在图确实帮助理解时才画，比如函数图像、几何关系、收敛示意。示意图要写明是示意。
+长块分步时，在同一个块文件里重复“步骤说明 → 原图 → 转录 → 讲解”：
+
+```typst
+#step[Step 1: build a candidate.]
+#board(4, crop: "p4-upper", where: "upper half")
+#transcript[ ... ]
+Explanation of step 1 ...
+
+#step[Step 2: the iterates are Cauchy.]
+#board(4, crop: "p4-lower", where: "lower half")
+#transcript[ ... ]
+Explanation of step 2 ...
+```
+
+图用 matplotlib 生成 PNG（`dpi=200`），存到 `figures/`，用 `#image("/figures/x.png", width: 70%)` 插入。不要依赖 Typst 包（CeTZ 等）：有些环境连不上包仓库。只有在图确实帮助理解时才画，比如函数图像、几何关系、收敛示意。示意图要写明是示意。
 
 ### Typst 数学语法（与 LaTeX 不同，常见错误来源）
 
@@ -236,11 +310,12 @@ The strategy has three steps ...
 
 交付前全部做完：
 
-1. **覆盖：** 确认每一页都出现了 `#board(n)`，如 `for i in $(seq 1 N); do grep -lq "#board($i)" parts/*.typ || echo "missing $i"; done`。同一张图上有多块内容时只放一次，后面的块写明 “same board page”。
-2. **转录对照：** 把编译好的 PDF 渲染成图，逐页和板书原图比对。逐个符号看：上下标、正负号、不等号方向、求和范围。
-3. **数学核对：** 自己重新推一遍每一步。能用计算验证的（代数、积分、例子里的数）就用 sympy 或数值方法实际跑一下。如果你的解释说不通，要么是你看错了，要么是板书有问题；不要写一段听起来合理但没有推通的话。
-4. **标记核对：** 每处 `#inferred` 和 `#suspect` 在讲解里都有对应理由，反之亦然。
-5. **版面和语言：** 中文显示正常（没有方框），图片顺序正确，没有内容溢出页边。术语只在首次出现时带中文。
+1. **覆盖：** 对照 `plan.md`，确认每一页的每个区域都归入了某个块，没有遗漏，也没有两块重复讲同一段内容。再确认每一页都至少出现一次，如 `for i in $(seq 1 N); do grep -Eq "#board\($i[,)]" parts/*.typ || echo "missing $i"; done`。
+2. **块的完整性：** 每块从头读到尾，应当是一个完整的论证，不需要翻到别的块去拼。如果一个证明被切成了两块，或者一块里混了两件不相关的事，就重新切分。转录里每次换页都有 `#pagemark`。
+3. **转录对照：** 把编译好的 PDF 渲染成图，逐页和板书原图比对。逐个符号看：上下标、正负号、不等号方向、求和范围。
+4. **数学核对：** 自己重新推一遍每一步。能用计算验证的（代数、积分、例子里的数）就用 sympy 或数值方法实际跑一下。如果你的解释说不通，要么是你看错了，要么是板书有问题；不要写一段听起来合理但没有推通的话。
+5. **标记核对：** 每处 `#inferred` 和 `#suspect` 在讲解里都有对应理由，反之亦然。
+6. **版面和语言：** 中文显示正常（没有方框），图片顺序正确，没有内容溢出页边。术语只在首次出现时带中文。
 
 ## 作业题
 
